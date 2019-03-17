@@ -16,13 +16,31 @@ jobs:
           paths:
              - "node_modules"
       - run: npm run test -- --watch=false --progress=false --browsers=ChromeHeadlessCI
-  deploy:
+  deploy-dev:
     docker:
       - image: buildpack-deps:trusty
     steps:
       - checkout
       - run:
-          name: Deploy Master to Heroku
+          name: Deploy Develop to Heroku dev env
+          command: |
+            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_DEV.git master
+  deploy-release:
+    docker:
+      - image: buildpack-deps:trusty
+    steps:
+      - checkout
+      - run:
+          name: Deploy Release to Heroku rel env
+          command: |
+            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_REL.git master
+  deploy-prod:
+    docker:
+      - image: buildpack-deps:trusty
+    steps:
+      - checkout
+      - run:
+          name: Deploy Master to Heroku prod env
           command: |
             git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git master
 workflows:
@@ -30,7 +48,19 @@ workflows:
   build-deploy:
     jobs:
       - build
-      - deploy:
+      - deploy-dev:
+          requires:
+            - build
+          filters:
+            branches:
+              only: develop
+      - deploy-rel:
+          requires:
+            - build
+          filters:
+            branches:
+              only: release
+      - deploy-prod:
           requires:
             - build
           filters:
