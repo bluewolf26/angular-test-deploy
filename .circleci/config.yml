@@ -81,8 +81,8 @@ jobs:
       - run:
           command: |
             cd /home/circleci/angular-test-deploy/dist
-            git config user.email "toto@gmail.com"
-            git config user.name "Deployment Bot"
+            git config --global user.email "toto@gmail.com"
+            git config --global user.name "Deployment Bot"
             git init
             git add .
             git commit -m "initial"
