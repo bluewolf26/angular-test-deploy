@@ -40,6 +40,8 @@ jobs:
       # see https://hub.docker.com/r/circleci/node/tags/
       - image: circleci/node:8-browsers
     steps:
+      # Checkout the code from the branch into the working_directory
+      - checkout      
       # Restore local dependencies from cache
       - restore_cache:
           key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
