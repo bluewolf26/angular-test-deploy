@@ -49,6 +49,7 @@ jobs:
       - run:
           name: Install local dependencies
           command: npm install
+      - run: npm update
       # Cache local dependencies if they don't exist
       - save_cache:
           key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
