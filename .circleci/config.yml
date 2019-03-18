@@ -1,5 +1,39 @@
 version: 2
 jobs:
+  test:
+    working_directory: ~/angular-test-deploy
+    docker:
+      # specify the version you desire here
+      # see https://hub.docker.com/r/circleci/node/tags/
+      - image: circleci/node:8-browsers
+    steps:
+      # Checkout the code from the branch into the working_directory
+      - checkout
+      # Log the current branch
+      - run:
+          name: Show current branch
+          command: echo ${CIRCLE_BRANCH}
+      # Restore local dependencies from cache
+      - restore_cache:
+          key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      # Install project dependencies
+      - run:
+          name: Install local dependencies
+          command: npm install
+      # Cache local dependencies if they don't exist
+      - save_cache:
+          key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+             - "node_modules"
+      # Lint the source code
+      - run:
+          name: Linting
+          command: npm run lint
+      # Test the source code
+      - run:
+          name: Testing
+          command: npm run test
+      # - run: npm run test -- --watch=false --progress=false --browsers=ChromeHeadlessCI
   build:
     working_directory: ~/angular-test-deploy
     docker:
@@ -7,15 +41,23 @@ jobs:
       # see https://hub.docker.com/r/circleci/node/tags/
       - image: circleci/node:8-browsers
     steps:
-      - checkout
-      - restore_cache:
-          key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
-      - run: npm install
+      # Build project with different configuration based on
+      # the current branch
+      - run:
+          name: Building
+          command: |
+              if [ "${CIRCLE_BRANCH}" == "staging" ]; then
+                  npm run build-qa
+              elif [ "${CIRCLE_BRANCH}" == "master" ]; then
+                  npm run build-prod
+              else
+                  npm run build-dev
+              fi
+      # Cache the dist folder for the deploy job
       - save_cache:
-          key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-             - "node_modules"
-      - run: npm run test -- --watch=false --progress=false --browsers=ChromeHeadlessCI
+              - dist
   deploy-dev:
     docker:
       - image: buildpack-deps:trusty
@@ -25,7 +67,7 @@ jobs:
           name: Deploy Develop to Heroku dev env
           command: |
             git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_DEV.git develop
-  deploy-release:
+  deploy-qa:
     docker:
       - image: buildpack-deps:trusty
     steps:
@@ -33,7 +75,7 @@ jobs:
       - run:
           name: Deploy Release to Heroku rel env
           command: |
-            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_REL.git release
+            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_QA.git release
   deploy-prod:
     docker:
       - image: buildpack-deps:trusty
@@ -42,19 +84,22 @@ jobs:
       - run:
           name: Deploy Master to Heroku prod env
           command: |
-            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git master
+            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_PROD.git master
 workflows:
   version: 2
   build-deploy:
     jobs:
-      - build
+      - test
+      - build:
+          requires:
+            - test
       - deploy-dev:
           requires:
             - build
           filters:
             branches:
               only: develop
-      - deploy-rel:
+      - deploy-qa:
           requires:
             - build
           filters:
