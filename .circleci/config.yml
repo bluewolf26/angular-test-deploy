@@ -32,8 +32,7 @@ jobs:
       # Test the source code
       - run:
           name: Testing
-          command: npm run test
-      # - run: npm run test -- --watch=false --progress=false --browsers=ChromeHeadlessCI
+          command: npm run test -- --watch=false --progress=false --browsers=ChromeHeadlessCI
   build:
     working_directory: ~/angular-test-deploy
     docker:
