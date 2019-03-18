@@ -78,7 +78,7 @@ jobs:
       # Restore local dependencies from cache
       - restore_cache:
           key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run: cd dist
+      - run: cd /home/circleci/angular-test-deploy/dist
       - run: git init
       - run: git add .
       - run: git commit -m "initial"
