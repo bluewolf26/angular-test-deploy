@@ -45,8 +45,15 @@ jobs:
       # Restore local dependencies from cache
       - restore_cache:
           key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
-      # Build project with different configuration based on
-      # the current branch
+      # Install project dependencies
+      - run:
+          name: Install local dependencies
+          command: npm install
+      # Cache local dependencies if they don't exist
+      - save_cache:
+          key: angular-test-deploy-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+             - "node_modules"
       - run:
           name: Building
           command: |
@@ -63,14 +70,18 @@ jobs:
           paths:
               - dist
   deploy-dev:
+    working_directory: ~/angular-test-deploy    
     docker:
       - image: buildpack-deps:trusty
     steps:
-      - checkout
-      - run:
-          name: Deploy Develop to Heroku dev env
-          command: |
-            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_DEV.git develop
+      # Restore local dependencies from cache
+      - restore_cache:
+          key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run: cd dist
+      - run: git init
+      - run: git add .
+      - run: git commit -m "initial"
+      - run: git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME_DEV.git master
   deploy-qa:
     docker:
       - image: buildpack-deps:trusty
