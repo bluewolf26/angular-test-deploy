@@ -80,7 +80,8 @@ jobs:
           key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           command: |
-            cd /home/circleci/angular-test-deploy/dist
+            cd /home/circleci/angular-test-deploy/dist/angular-test-deploy
+            rename index.html index.php
             git config --global user.email "toto@gmail.com"
             git config --global user.name "Deployment Bot"
             git init
